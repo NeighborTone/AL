@@ -1,95 +1,54 @@
 #include <iostream>
 #include <conio.h>
-#include <alc.h>
-#include <al.h>
-#pragma comment(lib,"OpenAL32.lib")
+#include "wav.h"
+#include "Audio.hpp"
+#include <vector>
 
-static ALuint sid;
-[[nodiscard]] bool audioInit()
-{
-	ALCdevice* device = alcOpenDevice(NULL);
-	if (device == NULL) { return false; }
-
-	ALCcontext* context =  
-		alcCreateContext(
-		device,	 // ALCdevice *device, 
-		NULL	 //const ALCint* attrlist
-	);
-	if (context == NULL) { return false; }
-
-	alcMakeContextCurrent(context);
-	ALuint bid;
-
-	alGenBuffers(
-		1,		//ALsizei n, 
-		&bid	//ALuint* buffers
-	);
-
-	//矩形波
-	unsigned char data[] = {0xff, 0x00, 0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 };
-	//矩形波をセット
-	alBufferData(
-		bid,				//ALuint bid, 
-		AL_FORMAT_MONO8,	//ALenum format,
-		data,				//const ALvoid* data,
-		sizeof(data),		//ALsizei size, 
-		sizeof(data) * 441	//ALsizei freq
-	);
-
-	//Sourceボイスの作成
-	
-	alGenSources(
-		1,		//ALsizei n,
-		&sid	//ALuint* sources
-	);
-	//Sourceにバッファーをセット
-	alSourcei(
-		sid,		//ALuint sid, 
-		AL_BUFFER,	//ALenum param, 
-		bid			//ALint value
-	);
-
-	//ループ再生	
-	alSourcei(
-		sid,			//ALuint sid, 
-		AL_LOOPING,		//ALenum param, 
-		AL_TRUE			//ALint value
-	);
-	//ボリューム
-	alSourcef(
-		sid,
-		AL_GAIN,
-		0.1f
-	);
-	return true;
-}
-
-void audioPlay()
-{
-	alSourcePlay(sid);
-}
-
-void audioStop()
-{
-	alSourceStop(sid);
-}
 int main()
 {
-	if (!audioInit())
-	{
-		return 0;
-	}
+	
+
+	using namespace std;
+	WAVE          wav1;
+	WAVE_FORMAT   fmt1;
+	vector<short> ch1, ch2;
+
+	//ファイルから読み込み
+	wav1.load_from_file("lastcastle_16bit.wav");
+
+	//フォーマット情報とデータを取り出す
+	fmt1 = wav1.get_format();
+	wav1.get_channel(ch1, 0);
+
+	//フォーマット情報表示
+	cout << endl;
+	cout << "format id       = " << fmt1.format_id << endl;
+	cout << "channels        = " << fmt1.num_of_channels << "\t[Ch]" << endl;
+	cout << "sampling rate   = " << fmt1.samples_per_sec << "\t[Hz]" << endl;
+	cout << "bytes per sec   = " << fmt1.bytes_per_sec << "\t[bytes/sec]" << endl;
+	cout << "block size      = " << fmt1.block_size << "\t[bytes]" << endl;
+	cout << "bits per sample = " << fmt1.bits_per_sample << "\t[bits/sample]" << endl;
+
+	
+	cout << endl;
+
+	SoundClass Soundsystem;
+	Soundsystem.CreateSource("test", "lastcastle_16bit.wav", SoundSource::LoadMode::Streaming);
+	
+	
 	while (1)
 	{
 		switch (_getch())
 		{
 		case 'z':
-			audioPlay();
+			Soundsystem.GetSource("test")->Play(true);
 			break;
 		case 'x':
-			audioStop();
+			Soundsystem.GetSource("test")->Pause();
 			break;
 		}
-	
+
 	}
+
+	system("pause");
 }
